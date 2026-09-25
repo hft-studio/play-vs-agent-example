@@ -21,7 +21,7 @@ Open [http://localhost:3000](http://localhost:3000). Deal a hand, wait for the a
 
 Deploy your own copy on Vercel and set `PLAY_API_TOKEN` to a Studio personal access token from [pokerstudy.ai/settings/api](https://www.pokerstudy.ai/settings/api). The shared demo does not hold a token, so Deal stays off there.
 
-[Deploy your own on Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fhft-studio%2Fplay-vs-agent-example&env=PLAY_API_TOKEN&envDescription=Studio%20personal%20access%20token%20(psk_)&envLink=https%3A%2F%2Fwww.pokerstudy.ai%2Fsettings%2Fapi&project-name=play-vs-agent&repository-name=play-vs-agent)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fhft-studio%2Fplay-vs-agent-example&env=PLAY_API_TOKEN&envDescription=Studio%20personal%20access%20token%20(psk_)&envLink=https%3A%2F%2Fwww.pokerstudy.ai%2Fsettings%2Fapi&project-name=play-vs-agent&repository-name=play-vs-agent)
 
 ## What the proxy does
 

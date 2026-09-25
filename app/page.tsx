@@ -284,11 +284,8 @@ export default function Page() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {ready ? null : (
-            <a
-              href={DEPLOY_URL}
-              className="inline-flex h-9 items-center rounded-md border border-white/15 px-3 text-sm text-emerald-50 hover:bg-white/5"
-            >
-              Deploy your own on Vercel
+            <a href={DEPLOY_URL}>
+              <img alt="Deploy with Vercel" src="https://vercel.com/button" height={32} />
             </a>
           )}
           <button
