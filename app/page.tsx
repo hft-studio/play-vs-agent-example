@@ -283,11 +283,6 @@ export default function Page() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {ready ? null : (
-            <a href={DEPLOY_URL}>
-              <img alt="Deploy with Vercel" src="https://vercel.com/button" height={32} />
-            </a>
-          )}
           <button
             type="button"
             disabled={!ready}
@@ -409,12 +404,37 @@ export default function Page() {
         <HandHistory decisions={decisions} button={state.buttonIndex} />
       )}
 
-      <p className="text-center text-xs text-white/35">
-        Hand {hand || 0} · 100bb · example client for{" "}
-        <a className="underline" href="https://www.pokerstudy.ai/docs#play-vs-agent">
-          pokerstudy.ai/docs
+      <footer className="mt-4 space-y-5 border-t border-white/10 pt-5 text-sm text-white/55">
+        <p className="text-xs text-white/35">
+          Hand {hand || 0} · 100bb · example client for{" "}
+          <a className="underline" href="https://www.pokerstudy.ai/docs#play-vs-agent">
+            pokerstudy.ai/docs
+          </a>
+        </p>
+        <div className="flex flex-wrap items-end justify-between gap-6">
+        <div className="space-y-1">
+          <p className="font-medium text-white">HFT Labs</p>
+          <p>30 N Gould St, Ste N, Sheridan, WY 82801</p>
+          <a className="underline underline-offset-2 hover:text-white" href="mailto:michael@hftlabs.xyz">
+            michael@hftlabs.xyz
+          </a>
+          <p className="flex gap-4 pt-2">
+            <a className="hover:text-white" href="https://x.com/HftStudio">
+              X
+            </a>
+            <a className="hover:text-white" href="https://www.linkedin.com/company/hft-labs">
+              LinkedIn
+            </a>
+            <a className="hover:text-white" href="https://github.com/hft-studio">
+              GitHub
+            </a>
+          </p>
+        </div>
+        <a href={DEPLOY_URL}>
+          <img alt="Deploy with Vercel" src="https://vercel.com/button" height={32} />
         </a>
-      </p>
+        </div>
+      </footer>
     </main>
   );
 }
