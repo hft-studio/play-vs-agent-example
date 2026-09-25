@@ -516,7 +516,7 @@ function HandHistory({
                       <span className="font-medium">{d.name}</span>{" "}
                       <span>{d.label}</span>
                     </div>
-                    <DecisionEv d={d} />
+                    <DecisionEv d={d} pending={reviewing} />
                   </li>
                 ))}
               </ol>
@@ -528,9 +528,11 @@ function HandHistory({
   );
 }
 
-function DecisionEv({ d }: { d: Decision }) {
+function DecisionEv({ d, pending }: { d: Decision; pending: boolean }) {
   if (d.evError) return <p className="text-red-300">{d.evError}</p>;
-  if (!d.ev) return <p className="text-white/40">Evaluating…</p>;
+  if (!d.ev) {
+    return <p className="text-white/40">{pending ? "Evaluating…" : ""}</p>;
+  }
   const taken = `${d.ev.selected.action}${d.ev.selected.amount != null ? ` ${formatBb(d.ev.selected.amount)}` : ""}`;
   const bot = `${d.ev.bot.action}${d.ev.bot.amount != null ? ` ${formatBb(d.ev.bot.amount)}` : ""}`;
   return (
