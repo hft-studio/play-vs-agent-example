@@ -311,8 +311,8 @@ export default function Page() {
 
   return (
     <>
-    <main className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-5 px-4 pt-4 pb-24">
-      <div className="flex flex-col gap-3">
+    <main className="mx-auto flex w-full max-w-7xl flex-col items-start gap-4 px-4 pt-4 pb-24 lg:flex-row">
+      <div className="flex min-w-0 w-full flex-1 flex-col gap-3">
         <div className="relative overflow-hidden rounded-xl">
           <img src="/kit/table.jpg" alt="" draggable={false} className="block w-full select-none" />
           <div className="absolute inset-0">
@@ -471,13 +471,15 @@ export default function Page() {
         />
       )}
 
-      {decisions.length > 0 && state && (
-        <HandHistory decisions={decisions} button={state.buttonIndex} />
+      {state && (
+        <aside className="w-full shrink-0 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-6.5rem)] lg:w-80 lg:overflow-y-auto">
+          <HandHistory decisions={decisions} button={state.buttonIndex} />
+        </aside>
       )}
 
     </main>
       <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-[#07140c]">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 text-[13px] text-white/50">
+        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 text-[13px] text-white/50">
           <span className="font-medium text-white">HFT Labs</span>
           <span>30 N Gould St, Ste N, Sheridan, WY 82801</span>
           <a className="transition-colors hover:text-white/85" href="mailto:michael@hftlabs.xyz">
