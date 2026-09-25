@@ -174,6 +174,13 @@ export default function Page() {
     setReviewOpen(false);
   }, [stacks, button]);
 
+  const started = useRef(false);
+  useEffect(() => {
+    if (!ready || started.current) return;
+    started.current = true;
+    deal();
+  }, [ready, deal]);
+
   const finish = useCallback((next: GameState) => {
     if (!next.result) return;
     setStacks(next.players.map((p) => p.stack));
@@ -486,14 +493,6 @@ export default function Page() {
             GitHub
           </a>
           <span className="ml-auto font-mono text-[11px] text-white/40">© {new Date().getFullYear()}</span>
-          <button
-            type="button"
-            disabled={!ready}
-            onClick={() => deal()}
-            className="h-8 rounded-md bg-emerald-400 px-3 text-sm font-semibold text-emerald-950 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {state ? "Next hand" : "Deal"}
-          </button>
           <a href={DEPLOY_URL} className="inline-flex">
             <img alt="Deploy with Vercel" src="https://vercel.com/button" height={32} />
           </a>
