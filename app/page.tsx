@@ -265,7 +265,7 @@ export default function Page() {
 
   return (
     <>
-    <main className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-5 px-4 py-6">
+    <main className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-5 px-4 pt-6 pb-24">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-emerald-300/80">Play vs Agent</p>
@@ -404,7 +404,7 @@ export default function Page() {
       )}
 
     </main>
-      <footer className="mt-8 border-t border-white/10">
+      <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-[#07140c]">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 text-[13px] text-white/50">
           <span className="font-medium text-white">HFT Labs</span>
           <span>30 N Gould St, Ste N, Sheridan, WY 82801</span>
