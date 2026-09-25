@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/gateway": "^4.0.92",
+    "ai": "^7.0.114",
     "next": "16.3.6",
     "react": "19.2.8",
     "react-dom": "19.2.8"

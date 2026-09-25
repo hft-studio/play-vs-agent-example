@@ -322,6 +322,18 @@ export default function Page() {
                 style={seatStyle(seat)}
                 className="absolute w-28 -translate-x-1/2 -translate-y-1/2 text-center"
               >
+                {seat !== HERO && (
+                  <img
+                    src={`/api/avatar/${seat}`}
+                    alt=""
+                    width={40}
+                    height={40}
+                    className="mx-auto mb-1 h-10 w-10 rounded-full border border-white/20 object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                )}
                 {player && !player.folded && seat !== HERO && (
                   <div className="mb-1 flex justify-center gap-0.5">
                     <CardView card={player.hole[0]} hidden={!showCards} />
