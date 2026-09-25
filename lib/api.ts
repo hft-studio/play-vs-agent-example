@@ -62,12 +62,11 @@ export class PlayApiError extends Error {
   }
 }
 
-async function post<T>(path: string, body: unknown, token?: string | null): Promise<T> {
+async function post<T>(path: string, body: unknown): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
   };
-  if (token) headers.Authorization = `Bearer ${token}`;
   const res = await fetch(path, {
     method: "POST",
     headers,
@@ -91,10 +90,10 @@ async function post<T>(path: string, body: unknown, token?: string | null): Prom
   return parsed as T;
 }
 
-export function decide(body: DecideRequest, token?: string | null) {
-  return post<DecideResponse>("/api/decide", body, token);
+export function decide(body: DecideRequest) {
+  return post<DecideResponse>("/api/decide", body);
 }
 
-export function evaluate(body: DecideRequest, token?: string | null) {
-  return post<EvaluateResponse>("/api/evaluate", body, token);
+export function evaluate(body: DecideRequest) {
+  return post<EvaluateResponse>("/api/evaluate", body);
 }

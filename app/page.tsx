@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { decide, evaluate } from "@/lib/api";
+import { DEPLOY_URL } from "@/lib/deploy";
 import { handEvalEnabled } from "@/lib/flags";
 import {
   applyAction,
@@ -75,11 +76,29 @@ export default function Page() {
   const [reviewing, setReviewing] = useState(false);
   const [reviewDone, setReviewDone] = useState(0);
   const [reviewOpen, setReviewOpen] = useState(false);
-  const [token, setToken] = useState("");
+  const [ready, setReady] = useState(false);
   const [status, setStatus] = useState("Deal a 9-max hand. Eight seats are the agent.");
-  const tokenRef = useRef(token);
-  tokenRef.current = token;
+  const readyRef = useRef(ready);
+  readyRef.current = ready;
   const runRef = useRef(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/ready")
+      .then((res) => res.json())
+      .then((body: { ready?: boolean }) => {
+        if (cancelled) return;
+        const ok = Boolean(body.ready);
+        setReady(ok);
+        if (!ok) setStatus("Deploy your own on Vercel and set PLAY_API_TOKEN.");
+      })
+      .catch(() => {
+        if (!cancelled) setReady(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const nextDecisionId = useRef(0);
 
   const legal = state && state.toAct !== null ? legalActions(state) : null;
@@ -87,8 +106,8 @@ export default function Page() {
   const over = Boolean(state && isHandOver(state));
 
   const deal = useCallback(() => {
-    if (!tokenRef.current.trim()) {
-      setStatus("A Studio token is required.");
+    if (!readyRef.current) {
+      setStatus("Deploy your own on Vercel and set PLAY_API_TOKEN.");
       return;
     }
     runRef.current += 1;
@@ -169,10 +188,10 @@ export default function Page() {
       setBusy(false);
       return;
     }
-    if (!tokenRef.current.trim()) {
+    if (!readyRef.current) {
       setThinking(null);
       setBusy(false);
-      setStatus("A Studio token is required.");
+      setStatus("Deploy your own on Vercel and set PLAY_API_TOKEN.");
       return;
     }
     const seat = state.toAct;
@@ -182,7 +201,7 @@ export default function Page() {
     setBusy(true);
     const timer = window.setTimeout(async () => {
       try {
-        const res = await decide(snapshotFromState(state, seat, legalNow, taken), tokenRef.current);
+        const res = await decide(snapshotFromState(state, seat, legalNow, taken));
         if (run !== runRef.current) return;
         apply(state, actionFromResponse(res.action, res.amount, legalNow), seat, taken);
       } catch (err) {
@@ -193,7 +212,7 @@ export default function Page() {
       }
     }, 420);
     return () => window.clearTimeout(timer);
-  }, [state, taken, apply, token]);
+  }, [state, taken, apply, ready]);
 
   useEffect(() => {
     if (!handEvalEnabled || !state || !isHandOver(state) || decisions.length === 0) return;
@@ -209,10 +228,7 @@ export default function Page() {
         if (cancelled || run !== runRef.current) return;
         const d = queue[i];
         try {
-          const got = await evaluate(
-            { ...d.snapshot, selected: d.selected, iters: 12 },
-            tokenRef.current,
-          );
+          const got = await evaluate({ ...d.snapshot, selected: d.selected, iters: 12 });
           if (run !== runRef.current) return;
           setDecisions((cur) => cur.map((x) => (x.id === d.id ? { ...x, ev: got } : x)));
         } catch (err) {
@@ -267,16 +283,17 @@ export default function Page() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="password"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            placeholder="Studio token"
-            className="h-9 w-56 rounded-md border border-white/10 bg-black/30 px-3 text-sm outline-none placeholder:text-white/30"
-          />
+          {ready ? null : (
+            <a
+              href={DEPLOY_URL}
+              className="inline-flex h-9 items-center rounded-md border border-white/15 px-3 text-sm text-emerald-50 hover:bg-white/5"
+            >
+              Deploy your own on Vercel
+            </a>
+          )}
           <button
             type="button"
-            disabled={!token.trim()}
+            disabled={!ready}
             onClick={() => {
               setHand((n) => n + 1);
               deal();
