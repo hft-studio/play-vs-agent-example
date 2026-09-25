@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { decide, evaluate } from "@/lib/api";
+import { handEvalEnabled } from "@/lib/flags";
 import {
   applyAction,
   formatCard,
@@ -185,7 +186,7 @@ export default function Page() {
   }, [state, taken, apply]);
 
   useEffect(() => {
-    if (!state || !isHandOver(state) || decisions.length === 0) return;
+    if (!handEvalEnabled || !state || !isHandOver(state) || decisions.length === 0) return;
     const queue = decisions.filter((d) => d.isHero);
     if (queue.length === 0) return;
     const run = runRef.current;
@@ -245,9 +246,14 @@ export default function Page() {
           <h1 className="text-2xl font-semibold tracking-tight">9-max NLHE</h1>
           <p className="mt-1 max-w-xl text-sm text-emerald-100/70">
             Amounts are big blinds. Villains call{" "}
-            <code className="text-emerald-200">POST /api/play/decide</code>. After the hand,
-            your decisions are scored with{" "}
-            <code className="text-emerald-200">POST /api/play/evaluate</code>.
+            <code className="text-emerald-200">POST /api/play/decide</code>.
+            {handEvalEnabled && (
+              <>
+                {" "}
+                After the hand, your decisions are scored with{" "}
+                <code className="text-emerald-200">POST /api/play/evaluate</code>.
+              </>
+            )}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -365,7 +371,7 @@ export default function Page() {
         </aside>
       </div>
 
-      {reviewOpen && (
+      {handEvalEnabled && reviewOpen && (
         <ReviewModal
           decisions={decisions.filter((d) => d.isHero)}
           reviewing={reviewing}
