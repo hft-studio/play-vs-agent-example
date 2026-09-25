@@ -6,6 +6,9 @@ export async function proxyPlay(method: "GET" | "POST", path: string, req?: Requ
   const envToken = process.env.PLAY_API_TOKEN;
   if (incoming) headers.Authorization = incoming;
   else if (envToken) headers.Authorization = `Bearer ${envToken}`;
+  else if (method === "POST") {
+    return Response.json({ error: "authentication required" }, { status: 401 });
+  }
 
   let body: string | undefined;
   if (method === "POST") {

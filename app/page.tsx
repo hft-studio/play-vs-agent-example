@@ -87,6 +87,10 @@ export default function Page() {
   const over = Boolean(state && isHandOver(state));
 
   const deal = useCallback(() => {
+    if (!tokenRef.current.trim()) {
+      setStatus("A Studio token is required.");
+      return;
+    }
     runRef.current += 1;
     nextDecisionId.current = 0;
     const next = startHand(
@@ -165,6 +169,12 @@ export default function Page() {
       setBusy(false);
       return;
     }
+    if (!tokenRef.current.trim()) {
+      setThinking(null);
+      setBusy(false);
+      setStatus("A Studio token is required.");
+      return;
+    }
     const seat = state.toAct;
     const run = runRef.current;
     const legalNow = legalActions(state);
@@ -183,7 +193,7 @@ export default function Page() {
       }
     }, 420);
     return () => window.clearTimeout(timer);
-  }, [state, taken, apply]);
+  }, [state, taken, apply, token]);
 
   useEffect(() => {
     if (!handEvalEnabled || !state || !isHandOver(state) || decisions.length === 0) return;
@@ -261,16 +271,17 @@ export default function Page() {
             type="password"
             value={token}
             onChange={(e) => setToken(e.target.value)}
-            placeholder="Studio token (optional)"
+            placeholder="Studio token"
             className="h-9 w-56 rounded-md border border-white/10 bg-black/30 px-3 text-sm outline-none placeholder:text-white/30"
           />
           <button
             type="button"
+            disabled={!token.trim()}
             onClick={() => {
               setHand((n) => n + 1);
               deal();
             }}
-            className="h-9 rounded-md bg-emerald-400 px-4 text-sm font-semibold text-emerald-950"
+            className="h-9 rounded-md bg-emerald-400 px-4 text-sm font-semibold text-emerald-950 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {state ? "Next hand" : "Deal"}
           </button>

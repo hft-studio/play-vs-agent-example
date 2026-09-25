@@ -19,7 +19,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Deal a hand, wait for the agents, then act. EV appears on your turn.
 
-Optional Studio token: paste it in the header, or set `PLAY_API_TOKEN` (see `.env.example`). Decide is open today; evaluate accepts the same snapshot plus `selected`.
+A Studio token is required. Paste it in the header, or set `PLAY_API_TOKEN` (see `.env.example`). Decide and evaluate both reject a request with no token.
 
 ## What the proxy does
 
