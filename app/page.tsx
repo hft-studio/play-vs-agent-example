@@ -27,17 +27,26 @@ function positionOf(seat: number, button: number) {
   return POS[(seat - button + SEATS) % SEATS];
 }
 
-function chip(n: number) {
-  return n.toLocaleString();
+/** Engine chips → display string in big blinds. */
+function toBb(chips: number) {
+  const n = Math.round((chips / BB) * 10) / 10;
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
-function evText(n: number) {
+function bb(chips: number) {
+  return `${toBb(chips)}bb`;
+}
+
+function evText(chips: number) {
+  const n = Math.round((chips / BB) * 10) / 10;
   const sign = n > 0 ? "+" : "";
-  return `${sign}${n.toFixed(1)}`;
+  const body = Number.isInteger(n) ? String(n) : n.toFixed(1);
+  return `${sign}${body}bb`;
 }
 
 function describeAction(action: Action) {
-  if (action.type === "raise") return `raise ${action.amount}`;
+  if (action.type === "raise") return `raise ${bb(action.amount ?? 0)}`;
+  if (action.type === "call") return "call";
   return action.type;
 }
 
@@ -110,7 +119,7 @@ export default function Page() {
     setStacks(next.players.map((p) => p.stack));
     setButton((b) => (b + 1) % SEATS);
     const heroNet = next.result.net["0"] ?? 0;
-    setStatus(heroNet >= 0 ? `You win ${chip(heroNet)}.` : `You lose ${chip(-heroNet)}.`);
+    setStatus(heroNet >= 0 ? `You win ${bb(heroNet)}.` : `You lose ${bb(-heroNet)}.`);
   }, []);
 
   const apply = useCallback(
@@ -250,7 +259,7 @@ export default function Page() {
       <div className="grid gap-5 lg:grid-cols-[1fr_280px]">
         <section className="table-felt relative min-h-[540px] w-full overflow-hidden rounded-[46%]">
           <div className="absolute left-1/2 top-[42%] w-56 -translate-x-1/2 -translate-y-1/2 text-center">
-            <p className="text-[11px] uppercase tracking-wider text-emerald-100/60">Pot {chip(pot)}</p>
+            <p className="text-[11px] uppercase tracking-wider text-emerald-100/60">Pot {bb(pot)}</p>
             <div className="mt-2 flex justify-center gap-1">
               {board.length === 0 ? (
                 <span className="text-sm text-emerald-100/40">Preflop</span>
@@ -299,7 +308,7 @@ export default function Page() {
                     {seat === HERO ? "You" : `Agent ${seat}`} · {positionOf(seat, state?.buttonIndex ?? button)}
                   </p>
                   <p className="text-[11px] text-emerald-100/70">
-                    {chip(player?.stack ?? stacks[seat])}
+                    {bb(player?.stack ?? stacks[seat])}
                     {thinking === seat ? " · thinking" : lastActs[seat] ? ` · ${lastActs[seat]}` : ""}
                   </p>
                 </div>
@@ -315,7 +324,7 @@ export default function Page() {
           </div>
           {!heroToAct && !ev && (
             <p className="text-sm text-white/55">
-              EV loads on your turn. Fold is 0. Call / check EV is the hero chip delta after bot self-play.
+              EV loads on your turn, in big blinds. Fold is 0. Call / check EV is the hero stack delta after bot self-play.
             </p>
           )}
           {evLoading && <p className="text-sm text-amber-200">Running bot-playout…</p>}
@@ -329,7 +338,7 @@ export default function Page() {
                 tone={ev.selected.ev >= 0 ? "good" : "bad"}
               />
               <Row
-                label={`Agent ${ev.bot.action}${ev.bot.amount ? ` ${ev.bot.amount}` : ""}`}
+                label={`Agent ${ev.bot.action}${ev.bot.amount ? ` ${bb(ev.bot.amount)}` : ""}`}
                 value={evText(ev.bot.ev)}
                 tone={ev.bot.ev >= 0 ? "good" : "bad"}
               />
@@ -348,11 +357,11 @@ export default function Page() {
                 )}
                 {legal.canCheck && <Act onClick={() => heroAct({ type: "check" })}>Check</Act>}
                 {legal.callAmount > 0 && (
-                  <Act onClick={() => heroAct({ type: "call" })}>Call {legal.callAmount}</Act>
+                  <Act onClick={() => heroAct({ type: "call" })}>Call {bb(legal.callAmount)}</Act>
                 )}
                 {raiseTo.map((amt) => (
                   <Act key={amt} onClick={() => heroAct({ type: "raise", amount: amt })}>
-                    {amt >= (legal.maxRaiseTo ?? 0) ? `All-in ${amt}` : `Raise ${amt}`}
+                    {amt >= (legal.maxRaiseTo ?? 0) ? `All-in ${bb(amt)}` : `Raise ${bb(amt)}`}
                   </Act>
                 ))}
               </div>

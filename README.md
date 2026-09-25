@@ -3,7 +3,7 @@
 Minimal **9-max NLHE** web client for the Poker Study Play vs Agent API.
 
 - Eight villain seats call `POST /api/play/decide`
-- On your turn, `POST /api/play/evaluate` returns equity, the EV of a selected action, and the action the agent would take (with its EV)
+- On your turn, `POST /api/play/evaluate` returns equity, the EV of a selected action, and the action the agent would take (with its EV). The table shows stacks, pot, bets, and EV in big blinds.
 - This app proxies those routes so the browser never talks to pokerstudy.ai directly
 
 Docs: [pokerstudy.ai/docs#play-vs-agent](https://www.pokerstudy.ai/docs#play-vs-agent)
