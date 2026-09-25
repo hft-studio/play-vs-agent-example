@@ -64,7 +64,7 @@ function CardView({ card, hidden, size = "sm" }: { card?: string; hidden?: boole
       src={cardSrc(card, hidden || !card)}
       alt={hidden || !card ? "" : formatCard(card)}
       draggable={false}
-      className={`${box} w-auto drop-shadow-[0_2px_2px_rgba(0,0,0,0.45)]`}
+      className={`${box} w-auto shrink-0 drop-shadow-[0_2px_2px_rgba(0,0,0,0.45)]`}
     />
   );
 }
@@ -316,9 +316,9 @@ export default function Page() {
         <div className="relative overflow-hidden rounded-xl">
           <img src="/kit/table.jpg" alt="" draggable={false} className="block w-full select-none" />
           <div className="absolute inset-0">
-          <div className="absolute left-1/2 top-[40%] flex w-80 -translate-x-1/2 -translate-y-1/2 flex-col items-center">
+          <div className="absolute left-1/2 top-[38%] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center">
             <ChipBet amount={pot} />
-            <div className="mt-1 flex justify-center gap-1">
+            <div className="mt-1 flex flex-nowrap items-end justify-center gap-1">
               {board.map((c) => (
                 <CardView key={c} card={c} size="md" />
               ))}
@@ -388,7 +388,7 @@ export default function Page() {
           )}
 
           {state?.players[HERO] && !state.players[HERO].folded && (
-            <div className="absolute left-1/2 top-[46%] flex -translate-x-1/2 gap-1">
+            <div className="absolute left-1/2 top-[56%] flex -translate-x-1/2 flex-nowrap gap-1">
               <CardView card={state.players[HERO].hole[0]} size="lg" />
               <CardView card={state.players[HERO].hole[1]} size="lg" />
             </div>
