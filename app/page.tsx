@@ -125,7 +125,6 @@ export default function Page() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [betTo, setBetTo] = useState(0);
-  const [status, setStatus] = useState("Deal a 9-max hand. Eight seats are the agent.");
   const readyRef = useRef(ready);
   readyRef.current = ready;
   const runRef = useRef(0);
@@ -138,7 +137,6 @@ export default function Page() {
         if (cancelled) return;
         const ok = Boolean(body.ready);
         setReady(ok);
-        if (!ok) setStatus("Deploy your own on Vercel and set PLAY_API_TOKEN.");
       })
       .catch(() => {
         if (!cancelled) setReady(false);
@@ -154,10 +152,7 @@ export default function Page() {
   const over = Boolean(state && isHandOver(state));
 
   const deal = useCallback(() => {
-    if (!readyRef.current) {
-      setStatus("Deploy your own on Vercel and set PLAY_API_TOKEN.");
-      return;
-    }
+    if (!readyRef.current) return;
     runRef.current += 1;
     nextDecisionId.current = 0;
     const next = startHand(
@@ -177,15 +172,12 @@ export default function Page() {
     setReviewing(false);
     setReviewDone(0);
     setReviewOpen(false);
-    setStatus("Hand dealt.");
   }, [stacks, button]);
 
   const finish = useCallback((next: GameState) => {
     if (!next.result) return;
     setStacks(next.players.map((p) => p.stack));
     setButton((b) => (b + 1) % SEATS);
-    const heroNet = next.result.net["0"] ?? 0;
-    setStatus(heroNet >= 0 ? `You win ${formatChipsAsBb(heroNet)}.` : `You lose ${formatChipsAsBb(-heroNet)}.`);
   }, []);
 
   const apply = useCallback(
@@ -239,7 +231,6 @@ export default function Page() {
     if (!readyRef.current) {
       setThinking(null);
       setBusy(false);
-      setStatus("Deploy your own on Vercel and set PLAY_API_TOKEN.");
       return;
     }
     const seat = state.toAct;
@@ -256,7 +247,6 @@ export default function Page() {
         if (run !== runRef.current) return;
         const fallback: Action = legalNow.canCheck ? { type: "check" } : { type: "fold" };
         apply(state, fallback, seat, taken);
-        setStatus((err as Error).message);
       }
     }, 420);
     return () => window.clearTimeout(timer);
@@ -399,9 +389,8 @@ export default function Page() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-end justify-end gap-3">
-          {heroToAct && legal ? (
-            <>
+        {heroToAct && legal && (
+          <div className="flex flex-wrap items-end justify-end gap-3">
               {legal.canRaise && (
                 <div className="mr-auto flex min-w-[240px] flex-1 flex-col gap-1">
                   <div className="flex items-center gap-1">
@@ -462,11 +451,8 @@ export default function Page() {
                   </GgAct>
                 )}
               </div>
-            </>
-          ) : (
-            <p className="mr-auto text-sm text-white/60">{status}</p>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {handEvalEnabled && reviewOpen && (
