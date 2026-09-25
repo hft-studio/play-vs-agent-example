@@ -287,37 +287,7 @@ export default function Page() {
 
   return (
     <>
-    <main className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-5 px-4 pt-6 pb-24">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-emerald-300/80">Play vs Agent</p>
-          <h1 className="text-2xl font-semibold tracking-tight">9-max NLHE</h1>
-          <p className="mt-1 max-w-xl text-sm text-emerald-100/70">
-            Amounts are big blinds. Villains call{" "}
-            <code className="text-emerald-200">POST /api/play/decide</code>.
-            {handEvalEnabled && (
-              <>
-                {" "}
-                After the hand, your decisions are scored with{" "}
-                <code className="text-emerald-200">POST /api/play/evaluate</code>.
-              </>
-            )}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            disabled={!ready}
-            onClick={() => {
-              deal();
-            }}
-            className="h-9 rounded-md bg-emerald-400 px-4 text-sm font-semibold text-emerald-950 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {state ? "Next hand" : "Deal"}
-          </button>
-        </div>
-      </header>
-
+    <main className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-5 px-4 pt-4 pb-24">
       <div className="gg-rail relative rounded-[28px] px-3 pb-24 pt-3">
         <section className="table-felt relative min-h-[560px] w-full overflow-hidden rounded-[46%]">
           <div className="absolute left-1/2 top-[40%] w-72 -translate-x-1/2 -translate-y-1/2 text-center">
@@ -483,6 +453,14 @@ export default function Page() {
             GitHub
           </a>
           <span className="ml-auto font-mono text-[11px] text-white/40">© {new Date().getFullYear()}</span>
+          <button
+            type="button"
+            disabled={!ready}
+            onClick={() => deal()}
+            className="h-8 rounded-md bg-emerald-400 px-3 text-sm font-semibold text-emerald-950 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {state ? "Next hand" : "Deal"}
+          </button>
           <a href={DEPLOY_URL} className="inline-flex">
             <img alt="Deploy with Vercel" src="https://vercel.com/button" height={32} />
           </a>
