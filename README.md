@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Play vs Agent example
 
-## Getting Started
+Minimal **9-max NLHE** web client for the Poker Study Play vs Agent API.
 
-First, run the development server:
+- Eight villain seats call `POST /api/play/decide`
+- On your turn, `POST /api/play/evaluate` returns equity, the EV of a selected action, and the action the agent would take (with its EV)
+- This app proxies those routes so the browser never talks to pokerstudy.ai directly
 
-```bash
+Docs: [pokerstudy.ai/docs#play-vs-agent](https://www.pokerstudy.ai/docs#play-vs-agent)
+
+## Run locally
+
+```sh
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Deal a hand, wait for the agents, then act. EV appears on your turn.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Optional Studio token: paste it in the header, or set `PLAY_API_TOKEN` (see `.env.example`). Decide is open today; evaluate accepts the same snapshot plus `selected`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## What the proxy does
 
-## Learn More
+| This app | Upstream |
+| --- | --- |
+| `POST /api/decide` | `https://www.pokerstudy.ai/api/play/decide` |
+| `POST /api/evaluate` | `https://www.pokerstudy.ai/api/play/evaluate` |
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Override the host with `PLAY_API_BASE`.
