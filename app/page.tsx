@@ -404,50 +404,26 @@ export default function Page() {
       )}
 
     </main>
-      <footer className="relative mt-10 overflow-hidden pb-14">
-        <div className="mb-10 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-        <div className="mx-auto flex w-full max-w-6xl flex-col px-4">
-          <div className="flex flex-col items-start justify-between gap-9 sm:flex-row sm:gap-12">
-            <div className="flex flex-col gap-3">
-              <p className="text-sm font-medium text-white">HFT Labs</p>
-              <p className="text-[13px] leading-relaxed text-white/45">
-                30 N Gould St, Ste N, Sheridan, WY 82801
-                <br />
-                <a className="transition-colors hover:text-white/85" href="mailto:michael@hftlabs.xyz">
-                  michael@hftlabs.xyz
-                </a>
-              </p>
-            </div>
-            <nav className="flex gap-16">
-              <div className="flex flex-col gap-2.5">
-                <span className="mb-1 font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-white/40">
-                  Connect
-                </span>
-                <a className="text-[13px] text-white/50 transition-colors hover:text-white/85" href="https://x.com/HftStudio">
-                  X
-                </a>
-                <a
-                  className="text-[13px] text-white/50 transition-colors hover:text-white/85"
-                  href="https://www.linkedin.com/company/hft-labs"
-                >
-                  LinkedIn
-                </a>
-                <a
-                  className="text-[13px] text-white/50 transition-colors hover:text-white/85"
-                  href="https://github.com/hft-studio"
-                >
-                  GitHub
-                </a>
-              </div>
-            </nav>
-          </div>
-          <div className="my-10 h-px bg-white/6" />
-          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-            <p className="font-mono text-[11px] text-white/40">© {new Date().getFullYear()} HFT Labs</p>
-            <a href={DEPLOY_URL}>
-              <img alt="Deploy with Vercel" src="https://vercel.com/button" height={32} />
-            </a>
-          </div>
+      <footer className="mt-8 border-t border-white/10">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 text-[13px] text-white/50">
+          <span className="font-medium text-white">HFT Labs</span>
+          <span>30 N Gould St, Ste N, Sheridan, WY 82801</span>
+          <a className="transition-colors hover:text-white/85" href="mailto:michael@hftlabs.xyz">
+            michael@hftlabs.xyz
+          </a>
+          <a className="transition-colors hover:text-white/85" href="https://x.com/HftStudio">
+            X
+          </a>
+          <a className="transition-colors hover:text-white/85" href="https://www.linkedin.com/company/hft-labs">
+            LinkedIn
+          </a>
+          <a className="transition-colors hover:text-white/85" href="https://github.com/hft-studio">
+            GitHub
+          </a>
+          <span className="ml-auto font-mono text-[11px] text-white/40">© {new Date().getFullYear()}</span>
+          <a href={DEPLOY_URL} className="inline-flex">
+            <img alt="Deploy with Vercel" src="https://vercel.com/button" height={32} />
+          </a>
         </div>
       </footer>
     </>
