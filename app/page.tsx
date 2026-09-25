@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { decide, evaluate } from "@/lib/api";
 import { DEPLOY_URL } from "@/lib/deploy";
 import { handEvalEnabled } from "@/lib/flags";
@@ -24,7 +24,7 @@ import {
   snapshotFromState,
   type Taken,
 } from "@/lib/snapshot";
-import { CHIPS_PER_BB, START_STACK_CHIPS, formatBb, formatChipsAsBb, formatEv } from "@/lib/units";
+import { CHIPS_PER_BB, START_STACK_CHIPS, chipsToBb, formatBb, formatChipsAsBb, formatEv } from "@/lib/units";
 
 const SEATS = 9;
 const HERO = 0;
@@ -40,14 +40,28 @@ function describeAction(action: Action, paid?: number) {
   return action.type;
 }
 
-function CardView({ card, hidden }: { card?: string; hidden?: boolean }) {
+function formatTableBb(chips: number) {
+  const n = Math.round(chipsToBb(chips) * 10) / 10;
+  return `${n.toFixed(1)} BB`;
+}
+
+const BET_PCTS = [0.25, 0.33, 0.75, 1.33];
+
+function potSizedTo(streetCommitted: number, callAmount: number, pot: number, pct: number, min: number, max: number) {
+  const extra = Math.max(0, Math.round((pot + callAmount) * pct));
+  const to = streetCommitted + callAmount + extra;
+  return Math.max(min, Math.min(max, to));
+}
+
+function CardView({ card, hidden, size = "sm" }: { card?: string; hidden?: boolean; size?: "sm" | "md" | "lg" }) {
+  const box = size === "lg" ? "h-[4.5rem] w-12 text-lg" : size === "md" ? "h-14 w-10 text-base" : "h-8 w-6 text-[11px]";
   if (hidden || !card) {
-    return <span className="card-back inline-block h-11 w-8 rounded-[5px] border border-slate-700" />;
+    return <span className={`card-back inline-block rounded-[4px] border border-slate-700 ${box}`} />;
   }
   const red = isRedSuit(suitOf(card));
   return (
     <span
-      className={`card-face inline-flex h-11 w-8 items-center justify-center rounded-[5px] border border-black/10 text-[13px] font-semibold ${
+      className={`card-face inline-flex items-center justify-center rounded-[4px] border border-black/10 font-semibold ${box} ${
         red ? "text-red-600" : "text-neutral-900"
       }`}
     >
@@ -58,8 +72,15 @@ function CardView({ card, hidden }: { card?: string; hidden?: boolean }) {
 
 function seatStyle(seat: number): CSSProperties {
   const angle = (seat / SEATS) * Math.PI * 2 + Math.PI / 2;
-  const x = 50 + Math.cos(angle) * 42;
-  const y = 50 + Math.sin(angle) * 38;
+  const x = 50 + Math.cos(angle) * 40;
+  const y = 46 + Math.sin(angle) * 36;
+  return { left: `${x}%`, top: `${y}%` };
+}
+
+function dealerStyle(seat: number): CSSProperties {
+  const angle = (seat / SEATS) * Math.PI * 2 + Math.PI / 2;
+  const x = 50 + Math.cos(angle) * 26;
+  const y = 46 + Math.sin(angle) * 22;
   return { left: `${x}%`, top: `${y}%` };
 }
 
@@ -76,6 +97,7 @@ export default function Page() {
   const [reviewDone, setReviewDone] = useState(0);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const [betTo, setBetTo] = useState(0);
   const [status, setStatus] = useState("Deal a 9-max hand. Eight seats are the agent.");
   const readyRef = useRef(ready);
   readyRef.current = ready;
@@ -256,12 +278,12 @@ export default function Page() {
   const pot = state ? totalPot(state) : 0;
   const board = state?.board ?? [];
 
-  const raiseTo = useMemo(() => {
-    if (!legal?.canRaise) return [];
-    const potRaise = Math.min(legal.maxRaiseTo, legal.minRaiseTo + pot);
-    const sizes = [legal.minRaiseTo, potRaise, legal.maxRaiseTo];
-    return [...new Set(sizes)].filter((n) => n >= legal.minRaiseTo && n <= legal.maxRaiseTo);
-  }, [legal, pot]);
+  const spotKey = state && legal?.canRaise ? `${state.street}:${state.toAct}:${state.currentBet}:${pot}` : "";
+  useEffect(() => {
+    if (!spotKey || !legal?.canRaise || !state) return;
+    const hero = state.players[HERO];
+    setBetTo(potSizedTo(hero.streetCommitted, legal.callAmount, pot, 0.75, legal.minRaiseTo, legal.maxRaiseTo));
+  }, [spotKey]);
 
   return (
     <>
@@ -296,98 +318,138 @@ export default function Page() {
         </div>
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_280px]">
-        <section className="table-felt relative min-h-[540px] w-full overflow-hidden rounded-[46%]">
-          <div className="absolute left-1/2 top-[42%] w-56 -translate-x-1/2 -translate-y-1/2 text-center">
-            <p className="text-[11px] uppercase tracking-wider text-emerald-100/60">
-              Pot {formatChipsAsBb(pot)}
-            </p>
+      <div className="gg-rail relative rounded-[28px] px-3 pb-24 pt-3">
+        <section className="table-felt relative min-h-[560px] w-full overflow-hidden rounded-[46%]">
+          <div className="absolute left-1/2 top-[40%] w-72 -translate-x-1/2 -translate-y-1/2 text-center">
+            <p className="text-sm font-medium text-yellow-100/90">Total Pot : {formatTableBb(pot)}</p>
             <div className="mt-2 flex justify-center gap-1">
               {board.length === 0 ? (
-                <span className="text-sm text-emerald-100/40">Preflop</span>
+                <span className="text-sm text-emerald-100/50">Preflop</span>
               ) : (
-                board.map((c) => <CardView key={c} card={c} />)
+                board.map((c) => <CardView key={c} card={c} size="md" />)
               )}
             </div>
-            <p className="mt-3 text-xs text-emerald-50/80">{status}</p>
+            <p className="mt-2 text-xs text-emerald-50/80">{status}</p>
           </div>
+
+          {state && (
+            <span
+              style={dealerStyle(state.buttonIndex)}
+              className="absolute z-10 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-yellow-300 text-[10px] font-bold text-black"
+            >
+              D
+            </span>
+          )}
 
           {Array.from({ length: SEATS }, (_, seat) => {
             const player = state?.players[seat];
             const acting = state?.toAct === seat && !over;
-            const showCards = Boolean(player && (seat === HERO || over || player.folded));
+            const showCards = Boolean(player && (seat === HERO ? false : over) && !player.folded);
+            const name = seat === HERO ? "You" : `Agent ${seat}`;
             return (
               <div
                 key={seat}
                 style={seatStyle(seat)}
-                className="absolute w-36 -translate-x-1/2 -translate-y-1/2 text-center"
+                className="absolute w-28 -translate-x-1/2 -translate-y-1/2 text-center"
               >
-                <div
-                  className={`rounded-2xl border px-2 py-2 ${
-                    acting
-                      ? "border-amber-300 bg-amber-300/15"
-                      : "border-white/10 bg-black/35"
-                  }`}
-                >
-                  <div className="flex justify-center gap-1">
-                    {player ? (
-                      player.folded ? (
-                        <span className="text-xs text-white/40">Fold</span>
-                      ) : (
-                        <>
-                          <CardView card={player.hole[0]} hidden={!showCards} />
-                          <CardView card={player.hole[1]} hidden={!showCards} />
-                        </>
-                      )
-                    ) : (
-                      <>
-                        <CardView hidden />
-                        <CardView hidden />
-                      </>
-                    )}
+                {player && !player.folded && seat !== HERO && (
+                  <div className="mb-1 flex justify-center gap-0.5">
+                    <CardView card={player.hole[0]} hidden={!showCards} />
+                    <CardView card={player.hole[1]} hidden={!showCards} />
                   </div>
-                  <p className="mt-1 text-[11px] font-medium">
-                    {seat === HERO ? "You" : `Agent ${seat}`} · {positionOf(seat, state?.buttonIndex ?? button)}
-                  </p>
-                  <p className="text-[11px] text-emerald-100/70">
-                    {formatChipsAsBb(player?.stack ?? stacks[seat])}
-                    {thinking === seat ? " · thinking" : lastActs[seat] ? ` · ${lastActs[seat]}` : ""}
+                )}
+                <div
+                  className={`rounded-md border px-2 py-1 ${
+                    acting ? "border-amber-300 bg-black/70" : "border-white/10 bg-black/55"
+                  } ${player?.folded ? "opacity-40" : ""}`}
+                >
+                  <p className="truncate text-[11px] font-medium text-white">{name}</p>
+                  <p className="text-[11px] text-amber-100/90">{formatTableBb(player?.stack ?? stacks[seat])}</p>
+                  <p className="text-[10px] text-white/45">
+                    {positionOf(seat, state?.buttonIndex ?? button)}
+                    {thinking === seat ? " · …" : lastActs[seat] ? ` · ${lastActs[seat]}` : ""}
                   </p>
                 </div>
               </div>
             );
           })}
+
+          {state?.players[HERO] && !state.players[HERO].folded && (
+            <div className="absolute bottom-[18%] left-1/2 flex -translate-x-1/2 gap-1">
+              <CardView card={state.players[HERO].hole[0]} size="lg" />
+              <CardView card={state.players[HERO].hole[1]} size="lg" />
+            </div>
+          )}
         </section>
 
-        <aside className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-black/25 p-4">
-          <div className="mt-auto space-y-2">
-            <p className="text-xs uppercase tracking-[0.16em] text-emerald-300/70">Your action</p>
-            {heroToAct && legal ? (
-              <div className="flex flex-wrap gap-2">
+        <div className="absolute inset-x-4 bottom-3 flex flex-wrap items-end justify-end gap-3">
+          {heroToAct && legal ? (
+            <>
+              {legal.canRaise && (
+                <div className="mr-auto flex min-w-[240px] flex-1 flex-col gap-1">
+                  <div className="flex items-center gap-1">
+                    {BET_PCTS.map((pct) => {
+                      const hero = state!.players[HERO];
+                      const to = potSizedTo(hero.streetCommitted, legal.callAmount, pot, pct, legal.minRaiseTo, legal.maxRaiseTo);
+                      const on = Math.abs(to - betTo) <= 1;
+                      return (
+                        <button
+                          key={pct}
+                          type="button"
+                          onClick={() => setBetTo(to)}
+                          className={`rounded px-2 py-0.5 text-[11px] ${on ? "bg-amber-300 text-black" : "bg-black/40 text-white/70"}`}
+                        >
+                          {Math.round(pct * 100)}%
+                        </button>
+                      );
+                    })}
+                    <span className="ml-auto text-xs text-amber-100">{formatTableBb(Math.max(0, betTo - (state?.players[HERO].streetCommitted ?? 0)))}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={legal.minRaiseTo}
+                    max={legal.maxRaiseTo}
+                    step={1}
+                    value={Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, betTo || legal.minRaiseTo))}
+                    onChange={(e) => setBetTo(Number(e.target.value))}
+                    className="w-full accent-amber-300"
+                  />
+                </div>
+              )}
+              <div className="flex gap-2">
                 {legal.canFold && !legal.canCheck && (
-                  <Act onClick={() => heroAct({ type: "fold" })}>Fold</Act>
+                  <GgAct tone="fold" onClick={() => heroAct({ type: "fold" })}>
+                    Fold
+                  </GgAct>
                 )}
-                {legal.canCheck && <Act onClick={() => heroAct({ type: "check" })}>Check</Act>}
+                {legal.canCheck && (
+                  <GgAct tone="check" onClick={() => heroAct({ type: "check" })}>
+                    Check
+                  </GgAct>
+                )}
                 {legal.callAmount > 0 && (
-                  <Act onClick={() => heroAct({ type: "call" })}>
-                    Call {formatChipsAsBb(legal.callAmount)}
-                  </Act>
+                  <GgAct tone="call" onClick={() => heroAct({ type: "call" })}>
+                    Call
+                    <span className="block text-[11px] font-normal">{formatTableBb(legal.callAmount)}</span>
+                  </GgAct>
                 )}
-                {raiseTo.map((amt) => (
-                  <Act key={amt} onClick={() => heroAct({ type: "raise", amount: amt })}>
-                    {amt >= (legal.maxRaiseTo ?? 0)
-                      ? `All-in ${formatChipsAsBb(amt)}`
-                      : `Raise ${formatChipsAsBb(amt)}`}
-                  </Act>
-                ))}
+                {legal.canRaise && (
+                  <GgAct
+                    tone="bet"
+                    onClick={() => heroAct({ type: "raise", amount: Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, betTo)) })}
+                  >
+                    {betTo >= legal.maxRaiseTo ? "All-in" : legal.canCheck ? "Bet" : "Raise"}
+                    <span className="block text-[11px] font-normal">
+                      {formatTableBb(Math.max(0, (betTo || legal.minRaiseTo) - (state?.players[HERO].streetCommitted ?? 0)))}
+                    </span>
+                  </GgAct>
+                )}
               </div>
-            ) : (
-              <p className="text-sm text-white/45">
-                {over ? "Hand over." : busy ? "Agents acting…" : "Deal to start."}
-              </p>
-            )}
-          </div>
-        </aside>
+            </>
+          ) : (
+            <p className="text-sm text-white/50">{over ? "Hand over." : busy ? "Agents acting…" : "Deal to start."}</p>
+          )}
+        </div>
       </div>
 
       {handEvalEnabled && reviewOpen && (
@@ -549,13 +611,23 @@ function DecisionEv({ d, pending }: { d: Decision; pending: boolean }) {
   );
 }
 
-function Act({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+function GgAct({
+  children,
+  onClick,
+  tone,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  tone: "fold" | "check" | "call" | "bet";
+}) {
+  const color =
+    tone === "fold"
+      ? "bg-[#8d3a32] hover:bg-[#a3483e]"
+      : tone === "check"
+        ? "bg-[#6a4038] hover:bg-[#7d4d44]"
+        : "bg-[#c0453a] hover:bg-[#d35246]";
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-md bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20"
-    >
+    <button type="button" onClick={onClick} className={`min-w-[5.5rem] rounded-md px-4 py-2 text-sm font-semibold text-white ${color}`}>
       {children}
     </button>
   );
