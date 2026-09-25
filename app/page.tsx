@@ -66,7 +66,6 @@ function seatStyle(seat: number): CSSProperties {
 export default function Page() {
   const [stacks, setStacks] = useState(() => Array.from({ length: SEATS }, () => START_STACK_CHIPS));
   const [button, setButton] = useState(8);
-  const [hand, setHand] = useState(0);
   const [state, setState] = useState<GameState | null>(null);
   const [taken, setTaken] = useState<Taken[]>([]);
   const [decisions, setDecisions] = useState<Decision[]>([]);
@@ -265,6 +264,7 @@ export default function Page() {
   }, [legal, pot]);
 
   return (
+    <>
     <main className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-5 px-4 py-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -287,7 +287,6 @@ export default function Page() {
             type="button"
             disabled={!ready}
             onClick={() => {
-              setHand((n) => n + 1);
               deal();
             }}
             className="h-9 rounded-md bg-emerald-400 px-4 text-sm font-semibold text-emerald-950 disabled:cursor-not-allowed disabled:opacity-40"
@@ -404,38 +403,54 @@ export default function Page() {
         <HandHistory decisions={decisions} button={state.buttonIndex} />
       )}
 
-      <footer className="mt-4 space-y-5 border-t border-white/10 pt-5 text-sm text-white/55">
-        <p className="text-xs text-white/35">
-          Hand {hand || 0} · 100bb · example client for{" "}
-          <a className="underline" href="https://www.pokerstudy.ai/docs#play-vs-agent">
-            pokerstudy.ai/docs
-          </a>
-        </p>
-        <div className="flex flex-wrap items-end justify-between gap-6">
-        <div className="space-y-1">
-          <p className="font-medium text-white">HFT Labs</p>
-          <p>30 N Gould St, Ste N, Sheridan, WY 82801</p>
-          <a className="underline underline-offset-2 hover:text-white" href="mailto:michael@hftlabs.xyz">
-            michael@hftlabs.xyz
-          </a>
-          <p className="flex gap-4 pt-2">
-            <a className="hover:text-white" href="https://x.com/HftStudio">
-              X
+    </main>
+      <footer className="relative mt-10 overflow-hidden pb-14">
+        <div className="mb-10 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <div className="mx-auto flex w-full max-w-6xl flex-col px-4">
+          <div className="flex flex-col items-start justify-between gap-9 sm:flex-row sm:gap-12">
+            <div className="flex flex-col gap-3">
+              <p className="text-sm font-medium text-white">HFT Labs</p>
+              <p className="text-[13px] leading-relaxed text-white/45">
+                30 N Gould St, Ste N, Sheridan, WY 82801
+                <br />
+                <a className="transition-colors hover:text-white/85" href="mailto:michael@hftlabs.xyz">
+                  michael@hftlabs.xyz
+                </a>
+              </p>
+            </div>
+            <nav className="flex gap-16">
+              <div className="flex flex-col gap-2.5">
+                <span className="mb-1 font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-white/40">
+                  Connect
+                </span>
+                <a className="text-[13px] text-white/50 transition-colors hover:text-white/85" href="https://x.com/HftStudio">
+                  X
+                </a>
+                <a
+                  className="text-[13px] text-white/50 transition-colors hover:text-white/85"
+                  href="https://www.linkedin.com/company/hft-labs"
+                >
+                  LinkedIn
+                </a>
+                <a
+                  className="text-[13px] text-white/50 transition-colors hover:text-white/85"
+                  href="https://github.com/hft-studio"
+                >
+                  GitHub
+                </a>
+              </div>
+            </nav>
+          </div>
+          <div className="my-10 h-px bg-white/6" />
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+            <p className="font-mono text-[11px] text-white/40">© {new Date().getFullYear()} HFT Labs</p>
+            <a href={DEPLOY_URL}>
+              <img alt="Deploy with Vercel" src="https://vercel.com/button" height={32} />
             </a>
-            <a className="hover:text-white" href="https://www.linkedin.com/company/hft-labs">
-              LinkedIn
-            </a>
-            <a className="hover:text-white" href="https://github.com/hft-studio">
-              GitHub
-            </a>
-          </p>
-        </div>
-        <a href={DEPLOY_URL}>
-          <img alt="Deploy with Vercel" src="https://vercel.com/button" height={32} />
-        </a>
+          </div>
         </div>
       </footer>
-    </main>
+    </>
   );
 }
 
