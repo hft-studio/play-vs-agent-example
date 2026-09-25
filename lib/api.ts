@@ -68,7 +68,12 @@ async function post<T>(path: string, body: unknown, token?: string | null): Prom
     Accept: "application/json",
   };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(path, { method: "POST", headers, body: JSON.stringify(body) });
+  const res = await fetch(path, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(25_000),
+  });
   const text = await res.text();
   let parsed: unknown = null;
   try {

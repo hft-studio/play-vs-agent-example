@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { decide, evaluate, type EvaluateResponse } from "@/lib/api";
+import { decide, evaluate } from "@/lib/api";
 import {
   applyAction,
   formatCard,
@@ -71,11 +71,9 @@ export default function Page() {
   const [lastActs, setLastActs] = useState<string[]>(() => Array(SEATS).fill(""));
   const [thinking, setThinking] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
-  const [ev, setEv] = useState<EvaluateResponse | null>(null);
-  const [evLoading, setEvLoading] = useState(false);
-  const [evError, setEvError] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const [reviewDone, setReviewDone] = useState(0);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [token, setToken] = useState("");
   const [status, setStatus] = useState("Deal a 9-max hand. Eight seats are the agent.");
   const tokenRef = useRef(token);
@@ -104,10 +102,9 @@ export default function Page() {
     setTaken([]);
     setDecisions([]);
     setLastActs(Array(SEATS).fill(""));
-    setEv(null);
-    setEvError(null);
     setReviewing(false);
     setReviewDone(0);
+    setReviewOpen(false);
     setStatus("Hand dealt.");
   }, [stacks, button]);
 
@@ -188,45 +185,12 @@ export default function Page() {
   }, [state, taken, apply]);
 
   useEffect(() => {
-    if (!state || state.toAct !== HERO || isHandOver(state)) {
-      setEvLoading(false);
-      return;
-    }
-    const legalNow = legalActions(state);
-    const selected = legalNow.canCheck
-      ? { action: "check" as const }
-      : legalNow.callAmount > 0
-        ? { action: "call" as const }
-        : { action: "fold" as const };
-    const run = runRef.current;
-    setEv(null);
-    setEvError(null);
-    setEvLoading(true);
-    evaluate(
-      { ...snapshotFromState(state, HERO, legalNow, taken), selected, iters: 16 },
-      tokenRef.current,
-    )
-      .then((got) => {
-        if (run !== runRef.current) return;
-        setEv(got);
-      })
-      .catch((err) => {
-        if (run !== runRef.current) return;
-        setEvError((err as Error).message);
-      })
-      .finally(() => {
-        if (run === runRef.current) setEvLoading(false);
-      });
-  }, [state, taken]);
-
-  useEffect(() => {
     if (!state || !isHandOver(state) || decisions.length === 0) return;
+    const queue = decisions.filter((d) => d.isHero);
+    if (queue.length === 0) return;
     const run = runRef.current;
-    const queue = [
-      ...decisions.filter((d) => d.isHero),
-      ...decisions.filter((d) => !d.isHero),
-    ];
     let cancelled = false;
+    setReviewOpen(true);
     setReviewing(true);
     setReviewDone(0);
     void (async () => {
@@ -242,8 +206,11 @@ export default function Page() {
           setDecisions((cur) => cur.map((x) => (x.id === d.id ? { ...x, ev: got } : x)));
         } catch (err) {
           if (run !== runRef.current) return;
+          const timedOut = err instanceof DOMException && (err.name === "TimeoutError" || err.name === "AbortError");
           setDecisions((cur) =>
-            cur.map((x) => (x.id === d.id ? { ...x, evError: (err as Error).message } : x)),
+            cur.map((x) =>
+              x.id === d.id ? { ...x, evError: timedOut ? "evaluate timed out" : (err as Error).message } : x,
+            ),
           );
         }
         setReviewDone(i + 1);
@@ -279,7 +246,7 @@ export default function Page() {
           <p className="mt-1 max-w-xl text-sm text-emerald-100/70">
             Amounts are big blinds. Villains call{" "}
             <code className="text-emerald-200">POST /api/play/decide</code>. After the hand,
-            each decision is scored with{" "}
+            your decisions are scored with{" "}
             <code className="text-emerald-200">POST /api/play/evaluate</code>.
           </p>
         </div>
@@ -368,32 +335,6 @@ export default function Page() {
         </section>
 
         <aside className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-black/25 p-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-emerald-300/70">Expected value</p>
-            <h2 className="text-lg font-semibold">{over ? "Hand review" : "This street"}</h2>
-          </div>
-          {over ? (
-            <p className="text-sm text-white/55">
-              {reviewing
-                ? `Evaluating ${reviewDone}/${decisions.length} decisions…`
-                : decisions.every((d) => d.ev || d.evError)
-                  ? "Every decision has an evaluate result."
-                  : "History is below. Evaluate runs after the hand."}
-            </p>
-          ) : (
-            <>
-              {!heroToAct && !ev && (
-                <p className="text-sm text-white/55">
-                  On your turn this panel shows equity and EV in big blinds. After the
-                  hand we evaluate every decision.
-                </p>
-              )}
-              {evLoading && <p className="text-sm text-amber-200">Running bot-playout…</p>}
-              {evError && <p className="text-sm text-red-300">{evError}</p>}
-              {ev && <EvBlock ev={ev} />}
-            </>
-          )}
-
           <div className="mt-auto space-y-2">
             <p className="text-xs uppercase tracking-[0.16em] text-emerald-300/70">Your action</p>
             {heroToAct && legal ? (
@@ -424,13 +365,17 @@ export default function Page() {
         </aside>
       </div>
 
-      {decisions.length > 0 && state && (
-        <HandHistory
-          decisions={decisions}
+      {reviewOpen && (
+        <ReviewModal
+          decisions={decisions.filter((d) => d.isHero)}
           reviewing={reviewing}
           done={reviewDone}
-          button={state.buttonIndex}
+          onClose={() => setReviewOpen(false)}
         />
+      )}
+
+      {decisions.length > 0 && state && (
+        <HandHistory decisions={decisions} button={state.buttonIndex} />
       )}
 
       <p className="text-center text-xs text-white/35">
@@ -443,50 +388,66 @@ export default function Page() {
   );
 }
 
-function EvBlock({ ev }: { ev: EvaluateResponse }) {
+function ReviewModal({
+  decisions,
+  reviewing,
+  done,
+  onClose,
+}: {
+  decisions: Decision[];
+  reviewing: boolean;
+  done: number;
+  onClose: () => void;
+}) {
   return (
-    <div className="space-y-3 text-sm">
-      <Row label="Equity" value={`${(ev.equity * 100).toFixed(1)}%`} />
-      <Row
-        label={`Taken ${ev.selected.action}${ev.selected.amount != null ? ` ${formatBb(ev.selected.amount)}` : ""}`}
-        value={formatEv(ev.selected.ev)}
-        tone={ev.selected.ev >= 0 ? "good" : "bad"}
-      />
-      <Row
-        label={`Agent ${ev.bot.action}${ev.bot.amount != null ? ` ${formatBb(ev.bot.amount)}` : ""}`}
-        value={formatEv(ev.bot.ev)}
-        tone={ev.bot.ev >= 0 ? "good" : "bad"}
-      />
-      <p className="text-xs text-white/45">
-        {ev.bot.source} · {ev.model} · {ev.iters} iters
-      </p>
+    <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+      <div
+        className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-neutral-950 p-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.16em] text-emerald-300/70">Expected value</p>
+            <h2 className="text-lg font-semibold">Your decisions</h2>
+            <p className="mt-1 text-sm text-white/55">
+              {reviewing
+                ? `Evaluating ${done}/${decisions.length}…`
+                : "Scored after the hand. Villain actions are not priced."}
+            </p>
+          </div>
+          <button type="button" onClick={onClose} className="text-sm text-white/50">
+            Close
+          </button>
+        </div>
+        <ol className="flex flex-col gap-3">
+          {decisions.map((d) => (
+            <li key={d.id} className="rounded-lg border border-amber-300/30 bg-amber-300/5 px-3 py-2">
+              <p className="text-sm">
+                <span className="text-white/55">{d.position}</span> {d.label}
+              </p>
+              <DecisionEv d={d} pending={reviewing && !d.ev && !d.evError} />
+            </li>
+          ))}
+        </ol>
+      </div>
     </div>
   );
 }
 
 function HandHistory({
   decisions,
-  reviewing,
-  done,
   button,
 }: {
   decisions: Decision[];
-  reviewing: boolean;
-  done: number;
   button: number;
 }) {
   const sb = (button + 1) % SEATS;
   const bb = (button + 2) % SEATS;
   return (
     <section className="rounded-2xl border border-white/10 bg-black/25 p-4">
-      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <p className="text-xs uppercase tracking-[0.16em] text-emerald-300/70">Hand history</p>
-          <h2 className="text-lg font-semibold">Every decision · evaluate</h2>
-        </div>
-        <p className="text-xs text-white/45">
-          {reviewing ? `${done}/${decisions.length}` : `${decisions.filter((d) => d.ev).length}/${decisions.length} scored`}
-        </p>
+      <div className="mb-3">
+        <p className="text-xs uppercase tracking-[0.16em] text-emerald-300/70">Hand history</p>
+        <h2 className="text-lg font-semibold">Action</h2>
       </div>
       <div className="flex flex-col gap-4">
         <div>
@@ -507,16 +468,13 @@ function HandHistory({
                 {rows.map((d) => (
                   <li
                     key={d.id}
-                    className={`grid gap-1 rounded-lg border px-3 py-2 text-sm sm:grid-cols-[minmax(11rem,1fr)_minmax(12rem,2fr)] ${
+                    className={`rounded-lg border px-3 py-2 text-sm ${
                       d.isHero ? "border-amber-300/30 bg-amber-300/5" : "border-white/10 bg-black/20"
                     }`}
                   >
-                    <div>
-                      <span className="text-white/55">{d.position}</span>{" "}
-                      <span className="font-medium">{d.name}</span>{" "}
-                      <span>{d.label}</span>
-                    </div>
-                    <DecisionEv d={d} pending={reviewing} />
+                    <span className="text-white/55">{d.position}</span>{" "}
+                    <span className="font-medium">{d.name}</span>{" "}
+                    <span>{d.label}</span>
                   </li>
                 ))}
               </ol>
@@ -531,7 +489,7 @@ function HandHistory({
 function DecisionEv({ d, pending }: { d: Decision; pending: boolean }) {
   if (d.evError) return <p className="text-red-300">{d.evError}</p>;
   if (!d.ev) {
-    return <p className="text-white/40">{pending ? "Evaluating…" : ""}</p>;
+    return <p className="mt-1 text-sm text-white/40">{pending ? "Evaluating…" : "Waiting"}</p>;
   }
   const taken = `${d.ev.selected.action}${d.ev.selected.amount != null ? ` ${formatBb(d.ev.selected.amount)}` : ""}`;
   const bot = `${d.ev.bot.action}${d.ev.bot.amount != null ? ` ${formatBb(d.ev.bot.amount)}` : ""}`;
@@ -546,29 +504,6 @@ function DecisionEv({ d, pending }: { d: Decision; pending: boolean }) {
       </span>
       <span className="text-white/35"> · {(d.ev.equity * 100).toFixed(0)}% eq</span>
     </p>
-  );
-}
-
-function Row({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: "good" | "bad";
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-2">
-      <span className="text-white/60">{label}</span>
-      <span
-        className={
-          tone === "good" ? "text-emerald-300" : tone === "bad" ? "text-red-300" : "text-white"
-        }
-      >
-        {value}
-      </span>
-    </div>
   );
 }
 
