@@ -8,10 +8,8 @@ import {
   applyAction,
   formatCard,
   isHandOver,
-  isRedSuit,
   legalActions,
   startHand,
-  suitOf,
   totalPot,
   type Action,
   type GameState,
@@ -53,35 +51,64 @@ function potSizedTo(streetCommitted: number, callAmount: number, pot: number, pc
   return Math.max(min, Math.min(max, to));
 }
 
+function cardSrc(card?: string, hidden?: boolean) {
+  if (hidden || !card) return "/kit/cards/back.png";
+  const rank = card[0] === "T" ? "10" : card[0];
+  return `/kit/cards/${card[1].toUpperCase()}-${rank}.png`;
+}
+
 function CardView({ card, hidden, size = "sm" }: { card?: string; hidden?: boolean; size?: "sm" | "md" | "lg" }) {
-  const box = size === "lg" ? "h-[4.5rem] w-12 text-lg" : size === "md" ? "h-14 w-10 text-base" : "h-8 w-6 text-[11px]";
-  if (hidden || !card) {
-    return <span className={`card-back inline-block rounded-[4px] border border-slate-700 ${box}`} />;
-  }
-  const red = isRedSuit(suitOf(card));
+  const box = size === "lg" ? "h-16" : size === "md" ? "h-14" : "h-8";
   return (
-    <span
-      className={`card-face inline-flex items-center justify-center rounded-[4px] border border-black/10 font-semibold ${box} ${
-        red ? "text-red-600" : "text-neutral-900"
-      }`}
-    >
-      {formatCard(card)}
+    <img
+      src={cardSrc(card, hidden || !card)}
+      alt={hidden || !card ? "" : formatCard(card)}
+      draggable={false}
+      className={`${box} w-auto drop-shadow-[0_2px_2px_rgba(0,0,0,0.45)]`}
+    />
+  );
+}
+
+function ChipBet({ amount }: { amount: number }) {
+  if (amount <= 0) return null;
+  const n = amount >= 10 * CHIPS_PER_BB ? 3 : amount >= 2 * CHIPS_PER_BB ? 2 : 1;
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className="relative inline-block h-5 w-5">
+        {Array.from({ length: n }, (_, i) => (
+          <img
+            key={i}
+            src="/kit/chip.png"
+            alt=""
+            draggable={false}
+            className="absolute left-0 h-5 w-5"
+            style={{ bottom: i * 3 }}
+          />
+        ))}
+      </span>
+      <span className="text-[11px] font-semibold text-white drop-shadow">{formatTableBb(amount)}</span>
     </span>
   );
 }
 
-function seatStyle(seat: number): CSSProperties {
+function polar(seat: number, rx: number, ry: number): CSSProperties {
   const angle = (seat / SEATS) * Math.PI * 2 + Math.PI / 2;
-  const x = 50 + Math.cos(angle) * 40;
-  const y = 46 + Math.sin(angle) * 36;
-  return { left: `${x}%`, top: `${y}%` };
+  return {
+    left: `${50 + Math.cos(angle) * rx}%`,
+    top: `${44 + Math.sin(angle) * ry}%`,
+  };
 }
 
-function dealerStyle(seat: number): CSSProperties {
-  const angle = (seat / SEATS) * Math.PI * 2 + Math.PI / 2;
-  const x = 50 + Math.cos(angle) * 26;
-  const y = 46 + Math.sin(angle) * 22;
-  return { left: `${x}%`, top: `${y}%` };
+function seatStyle(seat: number) {
+  return polar(seat, seat === HERO ? 26 : 28, seat === HERO ? 30 : 23);
+}
+
+function dealerStyle(seat: number) {
+  return polar(seat, 22, 18);
+}
+
+function betStyle(seat: number) {
+  return polar(seat, 17, 14);
 }
 
 export default function Page() {
@@ -288,18 +315,17 @@ export default function Page() {
   return (
     <>
     <main className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-5 px-4 pt-4 pb-24">
-      <div className="gg-rail relative rounded-[28px] px-3 pb-24 pt-3">
-        <section className="table-felt relative min-h-[560px] w-full overflow-hidden rounded-[46%]">
-          <div className="absolute left-1/2 top-[40%] w-72 -translate-x-1/2 -translate-y-1/2 text-center">
-            <p className="text-sm font-medium text-yellow-100/90">Total Pot : {formatTableBb(pot)}</p>
-            <div className="mt-2 flex justify-center gap-1">
-              {board.length === 0 ? (
-                <span className="text-sm text-emerald-100/50">Preflop</span>
-              ) : (
-                board.map((c) => <CardView key={c} card={c} size="md" />)
-              )}
+      <div className="flex flex-col gap-3">
+        <div className="relative overflow-hidden rounded-xl">
+          <img src="/kit/table.jpg" alt="" draggable={false} className="block w-full select-none" />
+          <div className="absolute inset-0">
+          <div className="absolute left-1/2 top-[40%] flex w-80 -translate-x-1/2 -translate-y-1/2 flex-col items-center">
+            <ChipBet amount={pot} />
+            <div className="mt-1 flex justify-center gap-1">
+              {board.map((c) => (
+                <CardView key={c} card={c} size="md" />
+              ))}
             </div>
-            <p className="mt-2 text-xs text-emerald-50/80">{status}</p>
           </div>
 
           {state && (
@@ -328,7 +354,7 @@ export default function Page() {
                     alt=""
                     width={40}
                     height={40}
-                    className="mx-auto mb-1 h-10 w-10 rounded-full border border-white/20 object-cover"
+                    className="mx-auto mb-0.5 h-8 w-8 rounded-full border border-white/20 object-cover"
                     onError={(e) => {
                       e.currentTarget.style.display = "none";
                     }}
@@ -352,19 +378,28 @@ export default function Page() {
                     {thinking === seat ? " · …" : lastActs[seat] ? ` · ${lastActs[seat]}` : ""}
                   </p>
                 </div>
-              </div>
-            );
+            </div>
+          );
           })}
 
+          {state?.players.map((player, seat) =>
+            player.streetCommitted > 0 && !player.folded ? (
+              <div key={`bet-${seat}`} style={betStyle(seat)} className="absolute z-10 -translate-x-1/2 -translate-y-1/2">
+                <ChipBet amount={player.streetCommitted} />
+              </div>
+            ) : null,
+          )}
+
           {state?.players[HERO] && !state.players[HERO].folded && (
-            <div className="absolute bottom-[18%] left-1/2 flex -translate-x-1/2 gap-1">
+            <div className="absolute left-1/2 top-[46%] flex -translate-x-1/2 gap-1">
               <CardView card={state.players[HERO].hole[0]} size="lg" />
               <CardView card={state.players[HERO].hole[1]} size="lg" />
             </div>
           )}
-        </section>
+          </div>
+        </div>
 
-        <div className="absolute inset-x-4 bottom-3 flex flex-wrap items-end justify-end gap-3">
+        <div className="flex flex-wrap items-end justify-end gap-3">
           {heroToAct && legal ? (
             <>
               {legal.canRaise && (
@@ -429,7 +464,7 @@ export default function Page() {
               </div>
             </>
           ) : (
-            <p className="text-sm text-white/50">{over ? "Hand over." : busy ? "Agents acting…" : "Deal to start."}</p>
+            <p className="mr-auto text-sm text-white/60">{status}</p>
           )}
         </div>
       </div>

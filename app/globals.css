@@ -13,30 +13,7 @@
 }
 
 body {
-  background: var(--background);
+  background: #121212;
   color: var(--foreground);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-}
-
-.gg-rail {
-  background: radial-gradient(ellipse at 50% 40%, #4a3424 0%, #24180f 70%);
-  box-shadow: inset 0 0 0 1px rgba(255, 220, 160, 0.18), 0 18px 40px rgba(0, 0, 0, 0.45);
-}
-
-.table-felt {
-  background: radial-gradient(ellipse at 50% 42%, #1e8f46 0%, #0d6a32 58%, #084422 100%);
-  box-shadow:
-    inset 0 0 0 7px #d7b36a,
-    inset 0 0 0 12px #6d4b22,
-    inset 0 0 80px rgba(0, 0, 0, 0.28);
-}
-
-.card-face {
-  background: linear-gradient(180deg, #fffdf8 0%, #efe7d6 100%);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
-}
-
-.card-back {
-  background:
-    repeating-linear-gradient(45deg, #1d4ed8 0 4px, #1e3a8a 4px 8px);
 }
